@@ -1,5 +1,10 @@
 from flask import Flask, render_template, request
 import requests
+import smtplib
+
+MY_EMAIL = "vivathink99@gmail.com"
+MY_PASSWORD = "zzbfplpesxpairrs"
+
 
 app = Flask(__name__)
 
@@ -15,23 +20,27 @@ def get_all_posts():
 def about():
     return render_template("about.html", posts=data)
 
-@app.route('/contact')
+@app.route('/contact', methods=["POST", "GET"])
 def contact():
-    return render_template("contact.html", posts=data)
+    if request.method == "POST":
+        data = request.form
+        send_email(data["username"], data["email"], data["phone"], data["message"])
+        return render_template("contact.html", msg_sent=True), "<h1>Successfully sent your message</h1>"
+    return render_template("contact.html", msg_sent=False), "<h1>Fail to send your message</h1>"
 
 @app.route('/post/<int:num>')
 def post(num):
     return render_template("post.html", number=num, posts=data)
 
-@app.route('/submit', methods=["POST"])
-def receive_data():
-    data = request.form
-    print(data["username"])
-    print(data["email"])
-    print(data["phone"])
-    print(data["message"])
 
-    return "<h1>Successfully sent your message</h1>"
+def send_email(name, email, phone, message):
+    email_message = f"Subject:New Message\n\nName: {name}\nEmail: {email}\nPhone: {phone}\nMessage: {message}"
+    with smtplib.SMTP("smtp.gmail.com") as connection:
+        connection.starttls()
+        connection.login(MY_EMAIL, MY_PASSWORD)
+        connection.sendmail(MY_EMAIL, MY_EMAIL, email_message)
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
